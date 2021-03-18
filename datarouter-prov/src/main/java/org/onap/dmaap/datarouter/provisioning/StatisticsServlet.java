@@ -478,7 +478,7 @@ public class StatisticsServlet extends BaseServlet {
     private PreparedStatement makePreparedStatement(Map<String, String> map, Connection conn) throws SQLException, ParseException {
 
         String sql;
-        String feedids = null;
+        String feedids = "";
         String subid = " ";
 
         if (map.get(FEEDIDS) != null) {
@@ -489,10 +489,14 @@ public class StatisticsServlet extends BaseServlet {
         }
 
         eventlogger.info("Generating sql query to get Statistics resultset. ");
-        sql =  "SELECT * FROM LOG_RECORDS WHERE id in(" + feedids + ") and subid = " + subid;
+        sql =  "SELECT * FROM LOG_RECORDS WHERE id in(?) and subid = ?";
           eventlogger.debug("SQL Query for Statistics resultset. " + sql);
         intlogger.debug(sql);
-        return conn.prepareStatement(sql);
+        try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
+            preparedStatement.setArray(1, conn.createArrayOf("VARCHAR", feedids.split(",")));
+            preparedStatement.setString(2, subid);
+            return preparedStatement;
+        }
     }
 }
 
